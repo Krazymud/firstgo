@@ -18,33 +18,19 @@ type selpgArgs struct {
 	printDest                             string
 }
 
-var inputS = flag.Int("s", -1, "(Mandatory) Input Your startPage")
-var inputE = flag.Int("e", -1, "(Mandatory) Input Your endPage")
-var inputL = flag.Int("l", 72, "(Optional) Choosing pageLen mode, enter pageLen")
-var inputF = flag.Bool("f", false, "(Optional) Choosing pageBreaks mode")
-var inputD = flag.String("d", "default", "(Optional) Enter printing destination")
+var inputS = flag.IntP("startPage", "s", -1, "(Mandatory) Input Your startPage")
+var inputE = flag.IntP("endPage", "e", -1, "(Mandatory) Input Your endPage")
+var inputL = flag.IntP("pageLen", "l", 72, "(Optional) Choosing pageLen mode, enter pageLen")
+var inputF = flag.BoolP("pageBreak", "f", false, "(Optional) Choosing pageBreaks mode")
+var inputD = flag.StringP("printDest", "d", "default", "(Optional) Enter printing destination")
 
 func processArgs(selpg *selpgArgs) {
-	lenOfa := len(os.Args)
-	// check the command-line arguments
-	if lenOfa < 5 {
-		fmt.Printf("%v: not enough arguments\n", progname)
-		flag.Usage()
+	if *inputS == -1 || *inputE == -1 {
+		fmt.Fprintf(os.Stderr, "%v: --startPage(-s) and --endPage(-e) are necessary\n", progname)
 		os.Exit(1)
 	}
-	// handle first mandatory arg
-	if os.Args[1] != "--s" {
-		fmt.Fprintf(os.Stderr, "%v: 1st arg should be --s startPage\n", progname)
-		flag.Usage()
-		os.Exit(1)
-	}
+	// handle mandatory arg
 	selpg.startPage = *inputS
-	//handle second mandatory arg
-	if os.Args[3] != "--e" {
-		fmt.Fprintf(os.Stderr, "%v: 2nd arg should be --e endPage\n", progname)
-		flag.Usage()
-		os.Exit(1)
-	}
 	selpg.endPage = *inputE
 	//now handle optional args
 	lsign := false
@@ -120,13 +106,6 @@ func processInput(selpg *selpgArgs) {
 		outputWriter = bufio.NewWriter(os.Stdout)
 	} else {
 		cmd = exec.Command("lp", "-d", selpg.printDest)
-		/*cmd.Stdin = strings.NewReader("sss")
-		var stderr bytes.Buffer
-		cmd.Stderr = &stderr
-		err = cmd.Run()
-		if err != nil {
-			fmt.Println(err)
-		}*/
 		stdin, err = cmd.StdinPipe()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -134,63 +113,45 @@ func processInput(selpg *selpgArgs) {
 		}
 	}
 	//begin two input & output loops
-	if selpg.pageType == 'l' {
-		lineCount, pageCount := 0, 1
-		var line []byte
-		for {
+	lineCount, pageCount := 0, 1
+	var line []byte
+	for {
+		if selpg.pageType == 'l' {
 			line, err = inputReader.ReadBytes('\n')
-			if err != nil {
-				break
+		} else {
+			line, err = inputReader.ReadBytes('\f')
+		}
+		if err != nil {
+			if selpg.printDest == "default" {
+				outputWriter.WriteString(string(line))
+				outputWriter.Flush()
+			} else {
+				_, err := io.WriteString(stdin, string(line))
+				if err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					os.Exit(1)
+				}
 			}
+			break
+		}
+		if selpg.pageType == 'l' {
 			lineCount++
 			if lineCount > selpg.pageLen {
 				lineCount = 1
 				pageCount++
 			}
-			if pageCount >= selpg.startPage && pageCount <= selpg.endPage {
-				if selpg.printDest == "default" {
-					outputWriter.Write(line)
-					outputWriter.Flush()
-				} else {
-					_, err := io.WriteString(stdin, string(line))
-					if err != nil {
-						fmt.Fprintln(os.Stderr, err)
-						os.Exit(1)
-					}
-				}
-			}
-		}
-	} else {
-		pageCount := 1
-		var bt []byte
-		for {
-			bt, err = inputReader.ReadBytes('\f')
-			if err != nil {
-				if err == io.EOF {
-					if selpg.printDest == "default" {
-						outputWriter.WriteString(string(bt))
-						outputWriter.Flush()
-					} else {
-						_, err := io.WriteString(stdin, string(bt))
-						if err != nil {
-							fmt.Fprintln(os.Stderr, err)
-							os.Exit(1)
-						}
-					}
-				}
-				break
-			}
+		} else {
 			pageCount++
-			if pageCount >= selpg.startPage && pageCount <= selpg.endPage {
-				if selpg.printDest == "default" {
-					outputWriter.WriteString(string(bt))
-					outputWriter.Flush()
-				} else {
-					_, err := io.WriteString(stdin, string(bt))
-					if err != nil {
-						fmt.Fprintln(os.Stderr, err)
-						os.Exit(1)
-					}
+		}
+		if pageCount >= selpg.startPage && pageCount <= selpg.endPage {
+			if selpg.printDest == "default" {
+				outputWriter.Write(line)
+				outputWriter.Flush()
+			} else {
+				_, err := io.WriteString(stdin, string(line))
+				if err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					os.Exit(1)
 				}
 			}
 		}
