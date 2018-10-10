@@ -32,27 +32,11 @@ func processArgs(selpg *selpgArgs) {
 	// handle mandatory arg
 	selpg.startPage = *inputS
 	selpg.endPage = *inputE
-	//now handle optional args
-	lsign := false
-	fsign := false
-	for _, a := range os.Args {
-		if a == "--l" {
-			lsign = true
-			selpg.pageLen = *inputL
-		}
-		if a == "--f" {
-			fsign = true
-			selpg.pageType = 'f'
-		}
-		if a == "--d" {
-			selpg.printDest = *inputD
-		}
+	selpg.pageLen = *inputL
+	if *inputF == true {
+		selpg.pageType = 'f'
 	}
-	if lsign && fsign {
-		fmt.Fprintf(os.Stderr, "%v: You can only choose one mode: pageLen or pageBreaks\n", progname)
-		flag.Usage()
-		os.Exit(1)
-	}
+	selpg.printDest = *inputD
 	//there is one more arg
 	if flag.NArg() >= 1 {
 		if flag.NArg() > 1 {
@@ -83,7 +67,6 @@ func processArgs(selpg *selpgArgs) {
 }
 
 func processInput(selpg *selpgArgs) {
-
 	var inputReader *bufio.Reader
 	var outputWriter *bufio.Writer
 	var err error

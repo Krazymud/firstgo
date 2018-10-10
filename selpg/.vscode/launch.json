@@ -16,7 +16,7 @@
             "env": {
                 "GOPATH": "/root/gowork"
             },
-            "args": ["--s", "1", "--e", "1", "--d", "lp1", "data"]
+            "args": ["-s1", "-e2", "-l2"]
         }
     ]
 }
