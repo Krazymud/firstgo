@@ -105,16 +105,6 @@ func processInput(selpg *selpgArgs) {
 			line, err = inputReader.ReadBytes('\f')
 		}
 		if err != nil {
-			if selpg.printDest == "default" {
-				outputWriter.WriteString(string(line))
-				outputWriter.Flush()
-			} else {
-				_, err := io.WriteString(stdin, string(line))
-				if err != nil {
-					fmt.Fprintln(os.Stderr, err)
-					os.Exit(1)
-				}
-			}
 			break
 		}
 		if selpg.pageType == 'l' {
@@ -123,8 +113,6 @@ func processInput(selpg *selpgArgs) {
 				lineCount = 1
 				pageCount++
 			}
-		} else {
-			pageCount++
 		}
 		if pageCount >= selpg.startPage && pageCount <= selpg.endPage {
 			if selpg.printDest == "default" {
@@ -138,13 +126,13 @@ func processInput(selpg *selpgArgs) {
 				}
 			}
 		}
+		if selpg.pageType == 'f' {
+			pageCount++
+		}
 	}
 	if selpg.printDest != "default" {
 		stdin.Close()
-		stderr, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-		}
+		stderr, _ := cmd.CombinedOutput()
 		fmt.Fprintln(os.Stderr, string(stderr))
 	}
 }
