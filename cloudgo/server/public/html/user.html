@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type="text/javascript" src="public/node_modules/jquery/dist/jquery.min.js"></script>
+        <meta charset=utf-8>
+        <link href="public/css/user.css" type="text/css" rel="stylesheet"/>
+        <link rel = "Shortcut Icon" href="public/img/favicon.ico>"/>
+    </head>
+    <body> 
+        <div id="frame">
+            <h2>用户详情</h2>
+            <div id="content">
+                <p>用户名：{{.Username |html}}</p>
+                <p>学号：{{.Number}}</p>
+                <p>电话：{{.Phone}}</p>
+                <p>邮箱：{{.Email}}</p>
+            </div>
+            <button id="return">返回</button>
+        </div>
+        <script src="public/js/content.js"></script>
+    </body> 
+</html>

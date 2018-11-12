@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type="text/javascript" src="public/node_modules/jquery/dist/jquery.min.js"></script>
+        <meta charset="utf-8">
+        <link href="public/css/style.css" type="text/css" rel="stylesheet"/>
+        <link rel = "Shortcut Icon" href="public/img/favicon.ico">
+    </head>
+    <body>
+        <div id="frame">
+            <h2>用户注册</h2>
+            <form method="post">
+            <div id="inputArea">
+                <div class="input">
+                <label>用户名<input name="username"/></label>
+                    <p id="in_user"></p>
+                </div>
+                <div class="input">
+                <label>学号<input name="number"/></label>
+                    <p id="in_num"></p>
+                </div>
+                <div class="input">
+                <label>电话<input name="phone"/></label>
+                    <p id="in_phone"></p>
+                </div>
+                <div class="input">
+                <label>邮箱<input name="email"/></label>
+                    <p id="in_email"></p>
+                </div>
+            </div>
+            <div id="controlPanel">
+                <button id="clear" type="button">重置</button>
+                <button id="submit" type="button">提交</button>
+            </div>
+            </form>
+            <div id="tip"></div>
+        </div>
+    <script src="public/js/jquery.js"></script>
+    </body>
+</html>
