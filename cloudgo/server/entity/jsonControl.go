@@ -32,8 +32,6 @@ func init() {
 	defer jsonFile.Close()
 	bt, _ := ioutil.ReadAll(jsonFile)
 	json.Unmarshal(bt, &users)
-
-	fmt.Println(users)
 }
 
 func Register(userInfo map[string][]string) error {
