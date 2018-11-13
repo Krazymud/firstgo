@@ -162,11 +162,235 @@ type user struct {
 
 命令行指定端口运行：
 
+```shell
+PS F:\go\src\github.com\Krazymud\goproject\cloudgo> cloudgo -p 9090
+Successfully Opened users.json
+[negroni] listening on :9090
+...
+```
+
+访问localhost:9090：
+
+```shell
+[negroni] 2018-11-13T14:13:26+08:00 | 302 |      1.434104s | localhost:9090 | GET /
+[negroni] 2018-11-13T14:13:27+08:00 | 302 |      321.7413ms | localhost:9090 | GET /
+[negroni] 2018-11-13T14:13:28+08:00 | 200 |      1.0550913s | localhost:9090 | GET /register
+[negroni] 2018-11-13T14:13:29+08:00 | 304 |      79.0609ms | localhost:9090 | GET /public/js/jquery.js[negroni] 2018-11-13T14:13:29+08:00 | 200 |      1.3085087s | localhost:9090 | GET /public/css/style.css
+[negroni] 2018-11-13T14:13:31+08:00 | 200 |      335.8897ms | localhost:9090 | GET /public/img/bg.jpg
+```
 
 
 
 
 
+## 测试结果：
+
+### 1. curl测试
+
+采用`curl -v destination`命令，显示一次http通信的全过程。
+
+首先测试主页面：
+
+```bash
+[root@centos-client ~]# curl -v localhost:9090
+* About to connect() to localhost port 9090 (#0)
+*   Trying ::1...
+* Connected to localhost (::1) port 9090 (#0)
+> GET / HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: localhost:9090
+> Accept: */*
+> 
+< HTTP/1.1 302 Found
+< Location: /register
+< Date: Tue, 13 Nov 2018 06:20:37 GMT
+< Content-Length: 32
+< Content-Type: text/html; charset=utf-8
+< 
+<a href="/register">Found</a>.
+
+* Connection #0 to host localhost left intact
+```
+
+其中以*开头的表示curl任务，以>开头的为发送的信息，以<开头的为返回的信息。可以看到，这里返回了302，因为这里是要转到/register页面的。
+
+接着测试register页面：
+
+```bash
+[root@centos-client ~]# curl -v localhost:9090/register
+* About to connect() to localhost port 9090 (#0)
+*   Trying ::1...
+* Connected to localhost (::1) port 9090 (#0)
+> GET /register HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: localhost:9090
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Date: Tue, 13 Nov 2018 06:25:25 GMT
+< Content-Length: 1442
+< Content-Type: text/html; charset=utf-8
+< 
+<!DOCTYPE html>
+<html>
+    ...
+* Connection #0 to host localhost left intact
+
+```
+
+直接返回了html，状态也为200ok。
+
+curl工具还可以用来发送GET与POST方法，可以用它来测试注册的功能。先通过curl使用POST的方法来创建一个用户，再以同样的方式创建一个相同username的用户：
+
+```bash
+[root@centos-client ~]# curl -X POST --data "username=sdcsdc&number=12312312&email=cdssdc@ed.ed&phone=12312312323" localhost:9090/register
+[root@centos-client ~]# curl -X POST --data "username=sdcsdc&number=12312312&email=cdssdc@ed.ed&phone=12312312323" localhost:9090/register
+用户名重复[root@centos-client ~]#
+```
+
+可见服务端正确的返回了错误信息。
+
+最后，查看一下用户详情页：
+
+```bash
+[root@centos-client ~]# curl -v localhost:9090/register?username=sdcsdc* About to connect() to localhost port 9090 (#0)
+*   Trying ::1...
+* Connected to localhost (::1) port 9090 (#0)
+> GET /register?username=sdcsdc HTTP/1.1
+> User-Agent: curl/7.29.0
+> Host: localhost:9090
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Date: Tue, 13 Nov 2018 06:33:34 GMT
+< Content-Length: 750
+< Content-Type: text/html; charset=utf-8
+< 
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type="text/javascript" src="public/node_modules/jquery/dist/jquery.min.js"></script>
+        <meta charset=utf-8>
+        <link href="public/css/user.css" type="text/css" rel="stylesheet"/>
+        <link rel = "Shortcut Icon" href="public/img/favicon.ico>"/>
+    </head>
+    <body> 
+        <div id="frame">
+            <h2>用户详情</h2>
+            <div id="content">
+                <p>用户名：sdcsdc</p>
+                <p>学号：12312312</p>
+                <p>电话：12312312323</p>
+                <p>邮箱：cdssdc@ed.ed</p>
+            </div>
+            <button id="return">返回</button>
+        </div>
+        <script src="public/js/content.js"></script>
+    </body> 
+* Connection #0 to host localhost left intact
+```
+
+服务端接受了请求并返回了相应的经过渲染的html文件。
+
+
+
+### 2. ab测试
+
+这里对实现的简单web程序进行Apache web压力测试，使用的命令为`ab -n 10000 -c 2000 destination`，其中`-n`表示压力测试总共的执行次数，而`-c`指的是压力测试的并发数。
+
+首先测试register页面，主要测试数据为：
+
+```bash
+[root@centos-client ~]# ab -n 10000 -c 2000 localhost:9090/register
+
+......
+
+Server Software:        
+Server Hostname:        localhost
+Server Port:            9090
+
+Document Path:          /register
+Document Length:        1442 bytes
+
+Concurrency Level:      2000
+Time taken for tests:   6.741 seconds
+Complete requests:      10000
+Failed requests:        0
+Write errors:           0
+Total transferred:      15600000 bytes
+HTML transferred:       14420000 bytes
+Requests per second:    1483.35 [#/sec] (mean)
+Time per request:       1348.299 [ms] (mean)
+Time per request:       0.674 [ms] (mean, across all concurrent requests)
+Transfer rate:          2259.79 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0  250 709.3      1    3027
+Processing:    10  885 276.7    958    2214
+Waiting:        4  880 286.2    958    2214
+Total:         11 1135 764.9   1003    4357
+
+Percentage of the requests served within a certain time (ms)
+  50%   1003
+  66%   1106
+  75%   1155
+  80%   1172
+  90%   1753
+  95%   3084
+  98%   4076
+  99%   4328
+ 100%   4357 (longest request)
+```
+
+可以看到，总共传输了15600000字节的数据，其中有14420000字节是html数据，每秒的请求数为1483.35次，没有失败的请求与写文件的错误，测试总共花费6.741秒。
+
+接下来测试用户详情页：
+
+```bash
+[root@centos-client ~]# ab -n 10000 -c 2000 localhost:9090/register?username=sdcsdc
+
+......
+
+Server Software:        
+Server Hostname:        localhost
+Server Port:            9090
+
+Document Path:          /register?username=sdcsdc
+Document Length:        750 bytes
+
+Concurrency Level:      2000
+Time taken for tests:   6.282 seconds
+Complete requests:      10000
+Failed requests:        0
+Write errors:           0
+Total transferred:      8670000 bytes
+HTML transferred:       7500000 bytes
+Requests per second:    1591.80 [#/sec] (mean)
+Time per request:       1256.440 [ms] (mean)
+Time per request:       0.628 [ms] (mean, across all concurrent requests)
+Transfer rate:          1347.74 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0  239 672.9      2    3011
+Processing:     5  914 298.2    892    2260
+Waiting:        2  912 299.6    891    2260
+Total:          6 1153 764.1    918    4538
+
+Percentage of the requests served within a certain time (ms)
+  50%    918
+  66%   1184
+  75%   1247
+  80%   1308
+  90%   1955
+  95%   2239
+  98%   4006
+  99%   4292
+ 100%   4538 (longest request)
+```
+
+总共花费6.282秒，传输8670000字节，每秒请求数为1591.8次，没有失败的请求与写错误，与register页面的测试结果相差不大。
 
 
 
