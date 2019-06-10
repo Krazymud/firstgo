@@ -39,7 +39,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		r.ParseForm()
+		r.ParseForm()	//拿到post内容
 		err := entity.Register(r.Form)
 		if err != nil {
 			w.WriteHeader(404)
